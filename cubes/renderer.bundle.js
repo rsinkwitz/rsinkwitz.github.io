@@ -125747,7 +125747,7 @@ function getPieceIndex(piece) {
 }
 let isMovingObject = false;
 function onPointerDown(event) {
-    // console.log("event: " + event.clientX + " " + event.clientY);
+    console.log("event: " + event.clientX + " " + event.clientY);
     mouseDown = true;
     onDrag(event);
     initialPoint = isPoint.clone();
@@ -125978,7 +125978,7 @@ function getPyraRotationBySelection(px, py, pz, dragStart, dragEnd) {
         dir = "x";
         angleDiff = getAngleDiff(dragStart.y, -dragStart.z, dragEnd.y, -dragEnd.z);
     }
-    // console.log("p=" + f2dec2(px) + " " + f2dec2(py) + " " + f2dec2(pz) + " dir: " + dir + " angleDiff: " + angleDiff * 180 / Math.PI );
+    console.log("p=" + f2dec2(px) + " " + f2dec2(py) + " " + f2dec2(pz) + " dir: " + dir + " angleDiff: " + angleDiff * 180 / Math.PI);
     for (let i = 0; i < pyraSelectionToRotation.length; i++) {
         const sel = pyraSelectionToRotation[i];
         if ((sel.px === Math.round(px) || sel.px === 99) && (sel.py === Math.round(py) || sel.py === 99) && (sel.pz === Math.round(pz) || sel.pz === 99)
@@ -125989,7 +125989,7 @@ function getPyraRotationBySelection(px, py, pz, dragStart, dragEnd) {
             if ((angleDiff < 0) != rotReverse) {
                 rot = rot.toUpperCase();
             }
-            // console.log("rot: " + rot);
+            console.log("rot: " + rot);
             return rot;
         }
     }
@@ -126626,7 +126626,7 @@ function shuffleOperation(n = 20) {
 }
 function scaleTo2x2(forward, duration = 0.5) {
     if (forward === is2x2) {
-        // console.log("already in desired 2x2 mode: "+forward);
+        console.log("already in desired 2x2 mode: " + forward);
         return new Promise((resolve, reject) => { resolve(); });
     }
     return new Promise((resolve) => {
@@ -126703,7 +126703,7 @@ function createNormals(mesh) {
 }
 function morphToPyra(forward, duration = 0.5) {
     if (forward === isPyraShape) {
-        // console.log("already in desired pyramorphix mode: "+forward);
+        console.log("already in desired pyramorphix mode: " + forward);
         return new Promise((resolve, reject) => { resolve(); });
     }
     return new Promise((resolve) => {
@@ -126768,13 +126768,13 @@ function morphCombined(newState) {
     return new Promise((resolve) => {
         const ops = [];
         const orgState = (is2x2 ? 1 : 0) + (isPyraShape ? 2 : 0);
-        // console.log("morphing from " + orgState + " to " + newState);
+        console.log("morphing from " + orgState + " to " + newState);
         const path = paths.find((path) => path.from === orgState && path.to === newState);
         path === null || path === void 0 ? void 0 : path.ops.forEach((op) => ops.push(op));
         doInSequence(ops)
             .then(() => {
             const state = (is2x2 ? 1 : 0) + (isPyraShape ? 2 : 0);
-            // console.log("Arrived at state "+state);
+            console.log("Arrived at state " + state);
         })
             .then(() => resolve());
     });
@@ -126880,7 +126880,7 @@ function setBasegroupRotation() {
     tl.to(animObj, {
         lerpFactor: 1, duration: 0.5, ease: "linear",
         onUpdate: () => {
-            // console.log("lerpFactor: " + animObj.lerpFactor);
+            console.log("lerpFactor: " + animObj.lerpFactor);
             baseGroup.quaternion.slerp(targetQuaternion, animObj.lerpFactor);
             baseGroup.updateMatrix();
         },
@@ -126956,6 +126956,7 @@ function setupGui() {
 }
 function onKeyDown(event) {
     let isMac = /Mac/i.test(navigator.userAgent);
+    let decodedKey = null;
     switch (event.key) {
         case "F1":
             toggleRotationInfos();
@@ -127083,7 +127084,7 @@ function onKeyDown(event) {
                 let numOptions = Object.keys(ColorMask).length;
                 testIndex = Math.min(testIndex + 1, numOptions - 1);
                 colorMaskOption = testIndex;
-                // console.log("colorMaskOption: " + colorMaskOption);
+                console.log("colorMaskOption: " + colorMaskOption);
                 setAllCubeColors();
             }
             break;
@@ -127094,7 +127095,7 @@ function onKeyDown(event) {
                 let numOptions = Object.keys(ColorMask).length;
                 testIndex = Math.max(testIndex - 1, 0);
                 colorMaskOption = testIndex;
-                // console.log("colorMaskOption: " + colorMaskOption);
+                console.log("colorMaskOption: " + colorMaskOption);
                 setAllCubeColors();
             }
             break;
@@ -127121,7 +127122,34 @@ function onKeyDown(event) {
             baseGroup.updateMatrix();
             break;
         default:
-            break;
+            if (event.altKey) {
+                switch (event.code) {
+                    case "KeyL":
+                        decodedKey = "l";
+                        break;
+                    case "KeyR":
+                        decodedKey = "r";
+                        break;
+                    case "KeyU":
+                        decodedKey = "u";
+                        break;
+                    case "KeyD":
+                        decodedKey = "d";
+                        break;
+                    case "KeyF":
+                        decodedKey = "f";
+                        break;
+                    case "KeyB":
+                        decodedKey = "b";
+                        break;
+                }
+                if (decodedKey != null) {
+                    if (event.shiftKey) {
+                        decodedKey = decodedKey.toUpperCase();
+                    }
+                    rotate(decodedKey + "!"); // rotate with alt key
+                }
+            }
     }
     event.preventDefault();
 }
