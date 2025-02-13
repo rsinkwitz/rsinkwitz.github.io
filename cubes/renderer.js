@@ -7,6 +7,7 @@ const FontLoader_1 = require("three/examples/jsm/loaders/FontLoader");
 const gsap_1 = require("gsap");
 const dat_gui_1 = require("dat.gui");
 const BoxGeometryEnh_1 = require("./BoxGeometryEnh");
+const RGBELoader_1 = require("three/examples/jsm/loaders/RGBELoader");
 const cubeDiv = document.getElementById('container');
 let scene;
 let camera;
@@ -21,13 +22,16 @@ let showRotationInfos = false;
 let isWireframe = false;
 let isHideNext = false;
 let is2x2 = false;
+let isMirrorCube = false;
 let isPyraShape = false;
 let isPyraColors = false;
+let isMirrorColors = false;
 let testIndex = 0;
 let isShowOneCube = false;
 let isViewRight = true;
 let viewUp = 1;
 let isNormals = false;
+let isGold = false;
 const cubeSize = 0.98;
 const cubeStep = 1;
 const roughness = 0.2;
@@ -52,6 +56,9 @@ const basicMaterials = [
 const blackMaterial = new THREE.MeshStandardMaterial({ color: 0x202020, roughness: roughness });
 const grayMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: roughness });
 const wireframeMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, wireframe: true });
+let silverMaterial;
+let goldMaterial;
+let mirrorMaterials;
 function init() {
     if (cubeDiv.parentElement === null) {
         console.log("cubeDiv not found, parentElement is null");
@@ -70,6 +77,32 @@ function init() {
     renderer.setClearColor(bgColor ? bgColor : 0xb0c4de); // Light blue-gray color in hexadecimal
     baseGroup = new THREE.Group();
     scene.add(baseGroup);
+    const loader = new RGBELoader_1.RGBELoader();
+    // loader.load('textures/autumn_field_puresky_1k.hdr', function (texture) {
+    loader.load('textures/rosendal_plains_2_1k.hdr', function (texture) {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = texture;
+        // scene.background = texture; // Optional: Set the background to the environment map
+        // Update the silver material to use the environment map
+        silverMaterial = new THREE.MeshStandardMaterial({
+            color: 0xc0c0c0,
+            roughness: 0.05, // Lower roughness for a shinier surface
+            metalness: 1.0, // High metalness for a metallic look
+            envMap: texture, // Apply the environment map
+            envMapIntensity: 1.0 // Ensure environment map intensity is set
+        });
+        goldMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffd700, // Gold color
+            roughness: 0.05, // Lower roughness for a shinier surface
+            metalness: 1.0, // High metalness for a metallic look
+            envMap: texture, // Apply the environment map
+            envMapIntensity: 1.0 // Ensure environment map intensity is set
+        });
+        mirrorMaterials = [silverMaterial, silverMaterial, silverMaterial, silverMaterial, silverMaterial, silverMaterial];
+        init1();
+    });
+}
+function init1() {
     createMain(cubeDiv.getAttribute('data-shape'));
     const axesHelper = new THREE.AxesHelper(3);
     axesHelper.visible = showAxes;
@@ -204,7 +237,7 @@ function getPieceIndex(piece) {
 }
 let isMovingObject = false;
 function onPointerDown(event) {
-    console.log("event: " + event.clientX + " " + event.clientY);
+    // console.log("event: " + event.clientX + " " + event.clientY);
     mouseDown = true;
     onDrag(event);
     initialPoint = isPoint.clone();
@@ -292,6 +325,8 @@ function resetMain() {
     is2x2 = false;
     isPyraShape = false;
     isPyraColors = false;
+    isMirrorCube = false;
+    isMirrorColors = false;
     createMain();
 }
 function toggleAxes() {
@@ -435,7 +470,7 @@ function getPyraRotationBySelection(px, py, pz, dragStart, dragEnd) {
         dir = "x";
         angleDiff = getAngleDiff(dragStart.y, -dragStart.z, dragEnd.y, -dragEnd.z);
     }
-    console.log("p=" + f2dec2(px) + " " + f2dec2(py) + " " + f2dec2(pz) + " dir: " + dir + " angleDiff: " + angleDiff * 180 / Math.PI);
+    // console.log("p=" + f2dec2(px) + " " + f2dec2(py) + " " + f2dec2(pz) + " dir: " + dir + " angleDiff: " + angleDiff * 180 / Math.PI );
     for (let i = 0; i < pyraSelectionToRotation.length; i++) {
         const sel = pyraSelectionToRotation[i];
         if ((sel.px === Math.round(px) || sel.px === 99) && (sel.py === Math.round(py) || sel.py === 99) && (sel.pz === Math.round(pz) || sel.pz === 99)
@@ -446,7 +481,7 @@ function getPyraRotationBySelection(px, py, pz, dragStart, dragEnd) {
             if ((angleDiff < 0) != rotReverse) {
                 rot = rot.toUpperCase();
             }
-            console.log("rot: " + rot);
+            // console.log("rot: " + rot);
             return rot;
         }
     }
@@ -603,7 +638,7 @@ function createGeometry(cubeIndex) {
             });
         });
         geometry.morphAttributes.position = [newPositions];
-        // create normals for the modified geometry
+        // create normals for the modified geometry 
         const tempGeometry = new THREE.BufferGeometry();
         tempGeometry.setAttribute('position', newPositions);
         if (geometry.index) {
@@ -617,6 +652,7 @@ function createGeometry(cubeIndex) {
 function createSingleCube(x, y, z) {
     const geometry = createGeometry((x + 1) + (y + 1) * 3 + (z + 1) * 9);
     const box = new THREE.Mesh(geometry, blackMaterial);
+    box.matrixAutoUpdate = false;
     box.name = "box";
     const group = new THREE.Group();
     group.matrixAutoUpdate = false;
@@ -730,13 +766,14 @@ function setCubeFaceColor(materials, index, i1, i2, enabled) {
     var _a, _b;
     const enabled1 = enabled.all || ((_a = enabled.faces) === null || _a === void 0 ? void 0 : _a.includes(i1));
     const enabled2 = enabled.all || ((_b = enabled.faces) === null || _b === void 0 ? void 0 : _b.includes(i2));
+    const sourceMaterials = isMirrorColors ? mirrorMaterials : basicMaterials;
     if (index === -1 && enabled1) {
-        materials[i1 * 2] = basicMaterials[i1];
-        materials[i1 * 2 + 1] = basicMaterials[i1];
+        materials[i1 * 2] = sourceMaterials[i1];
+        materials[i1 * 2 + 1] = sourceMaterials[i1];
     }
     else if (index === 1 && enabled2) {
-        materials[i2 * 2] = basicMaterials[i2];
-        materials[i2 * 2 + 1] = basicMaterials[i2];
+        materials[i2 * 2] = sourceMaterials[i2];
+        materials[i2 * 2 + 1] = sourceMaterials[i2];
     }
 }
 function setAllPyraColors() {
@@ -1083,7 +1120,7 @@ function shuffleOperation(n = 20) {
 }
 function scaleTo2x2(forward, duration = 0.5) {
     if (forward === is2x2) {
-        console.log("already in desired 2x2 mode: " + forward);
+        // console.log("already in desired 2x2 mode: "+forward);
         return new Promise((resolve, reject) => { resolve(); });
     }
     return new Promise((resolve) => {
@@ -1131,6 +1168,116 @@ function scaleTo2x2(forward, duration = 0.5) {
         });
     });
 }
+function getScaleAndTrans(addl, forward, transFactor) {
+    const scale2 = 1 + addl;
+    return [forward ? scale2 : 1 / scale2, (forward ? (1 - scale2) / 2 : (1 - 1 / scale2) / 2) * transFactor];
+}
+function scaleToMirrorCube(forward, duration = 0.5) {
+    if (forward === isMirrorCube) {
+        // console.log("already in desired mirror cube mode: "+forward);
+        return new Promise((resolve, reject) => { resolve(); });
+    }
+    return new Promise((resolve) => {
+        const leftIndexes = []; // the left pieces
+        const rightIndexes = []; // the right pieces
+        const bottomIndexes = []; // the bottom pieces
+        const topIndexes = []; // the top pieces
+        const backIndexes = []; // the back pieces
+        const frontIndexes = []; // the front pieces
+        for (let i = 0; i < 27; i++) {
+            const ix = i % 3;
+            const iy = Math.floor(i / 3) % 3;
+            const iz = Math.floor(i / 9);
+            if (ix === 0) {
+                leftIndexes.push(i);
+            }
+            if (ix === 2) {
+                rightIndexes.push(i);
+            }
+            if (iy === 0) {
+                bottomIndexes.push(i);
+            }
+            if (iy === 2) {
+                topIndexes.push(i);
+            }
+            if (iz === 0) {
+                backIndexes.push(i);
+            }
+            if (iz === 2) {
+                frontIndexes.push(i);
+            }
+        }
+        const [leftScaleTo, leftTransTo] = getScaleAndTrans(0.4, forward, 1);
+        const [rightScaleTo, rightTransTo] = getScaleAndTrans(-0.4, forward, -1);
+        const [bottomScaleTo, bottomTransTo] = getScaleAndTrans(-0.6, forward, 1);
+        const [topScaleTo, topTransTo] = getScaleAndTrans(0.6, forward, -1);
+        const [backScaleTo, backTransTo] = getScaleAndTrans(0.2, forward, 1);
+        const [frontScaleTo, frontTransTo] = getScaleAndTrans(-0.2, forward, -1);
+        const startMatrices = fixedPieces.map((piece) => getBox(piece).matrix.clone());
+        const animObj = { leftScale: 1, leftTrans: 0, rightScale: 1, rightTrans: 0, bottomScale: 1, bottomTrans: 0, topScale: 1, topTrans: 0,
+            backScale: 1, backTrans: 0, frontScale: 1, frontTrans: 0 };
+        const tl = gsap_1.default.timeline();
+        numAnims++;
+        tl.to(animObj, {
+            leftScale: leftScaleTo, leftTrans: leftTransTo, rightScale: rightScaleTo, rightTrans: rightTransTo,
+            bottomScale: bottomScaleTo, bottomTrans: bottomTransTo, topScale: topScaleTo, topTrans: topTransTo,
+            backScale: backScaleTo, backTrans: backTransTo, frontScale: frontScaleTo, frontTrans: frontTransTo,
+            duration: duration, ease: "linear",
+            onUpdate: () => {
+                fixedPieces.forEach((piece, index) => {
+                    getBox(piece).matrix.copy(startMatrices[index]); // Reset the matrix to the start matrix (undo previous transforms)
+                });
+                // Scale and move the left pieces
+                leftIndexes.forEach((index) => {
+                    const box = getBox(fixedPieces[index]);
+                    box.applyMatrix4(new THREE.Matrix4().makeTranslation(animObj.leftTrans, 0, 0)
+                        .multiply(new THREE.Matrix4().makeScale(animObj.leftScale, 1, 1)));
+                    box.matrixWorldNeedsUpdate = true;
+                });
+                // Scale and move the right pieces
+                rightIndexes.forEach((index) => {
+                    const box = getBox(fixedPieces[index]);
+                    box.applyMatrix4(new THREE.Matrix4().makeTranslation(animObj.rightTrans, 0, 0)
+                        .multiply(new THREE.Matrix4().makeScale(animObj.rightScale, 1, 1)));
+                    box.matrixWorldNeedsUpdate = true;
+                });
+                // Scale and move the bottom pieces
+                bottomIndexes.forEach((index) => {
+                    const box = getBox(fixedPieces[index]);
+                    box.applyMatrix4(new THREE.Matrix4().makeTranslation(0, animObj.bottomTrans, 0)
+                        .multiply(new THREE.Matrix4().makeScale(1, animObj.bottomScale, 1)));
+                    box.matrixWorldNeedsUpdate = true;
+                });
+                // Scale and move the top pieces
+                topIndexes.forEach((index) => {
+                    const box = getBox(fixedPieces[index]);
+                    box.applyMatrix4(new THREE.Matrix4().makeTranslation(0, animObj.topTrans, 0)
+                        .multiply(new THREE.Matrix4().makeScale(1, animObj.topScale, 1)));
+                    box.matrixWorldNeedsUpdate = true;
+                });
+                // Scale and move the back pieces
+                backIndexes.forEach((index) => {
+                    const box = getBox(fixedPieces[index]);
+                    box.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, animObj.backTrans)
+                        .multiply(new THREE.Matrix4().makeScale(1, 1, animObj.backScale)));
+                    box.matrixWorldNeedsUpdate = true;
+                });
+                // Scale and move the front pieces
+                frontIndexes.forEach((index) => {
+                    const box = getBox(fixedPieces[index]);
+                    box.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, animObj.frontTrans)
+                        .multiply(new THREE.Matrix4().makeScale(1, 1, animObj.frontScale)));
+                    box.matrixWorldNeedsUpdate = true;
+                });
+            },
+            onComplete: () => {
+                numAnims--;
+                isMirrorCube = forward;
+                resolve();
+            }
+        });
+    });
+}
 function createNormals(mesh) {
     const group = new THREE.Group();
     group.name = "normals";
@@ -1160,7 +1307,7 @@ function createNormals(mesh) {
 }
 function morphToPyra(forward, duration = 0.5) {
     if (forward === isPyraShape) {
-        console.log("already in desired pyramorphix mode: " + forward);
+        // console.log("already in desired pyramorphix mode: "+forward);
         return new Promise((resolve, reject) => { resolve(); });
     }
     return new Promise((resolve) => {
@@ -1225,13 +1372,13 @@ function morphCombined(newState) {
     return new Promise((resolve) => {
         const ops = [];
         const orgState = (is2x2 ? 1 : 0) + (isPyraShape ? 2 : 0);
-        console.log("morphing from " + orgState + " to " + newState);
+        // console.log("morphing from " + orgState + " to " + newState);
         const path = paths.find((path) => path.from === orgState && path.to === newState);
         path === null || path === void 0 ? void 0 : path.ops.forEach((op) => ops.push(op));
         doInSequence(ops)
             .then(() => {
             const state = (is2x2 ? 1 : 0) + (isPyraShape ? 2 : 0);
-            console.log("Arrived at state " + state);
+            // console.log("Arrived at state "+state);
         })
             .then(() => resolve());
     });
@@ -1337,7 +1484,7 @@ function setBasegroupRotation() {
     tl.to(animObj, {
         lerpFactor: 1, duration: 0.5, ease: "linear",
         onUpdate: () => {
-            console.log("lerpFactor: " + animObj.lerpFactor);
+            // console.log("lerpFactor: " + animObj.lerpFactor);
             baseGroup.quaternion.slerp(targetQuaternion, animObj.lerpFactor);
             baseGroup.updateMatrix();
         },
@@ -1370,6 +1517,19 @@ function toggleNormals() {
     }
     isNormals = !isNormals;
 }
+function toggleMirrorCube() {
+    scaleToMirrorCube(!isMirrorCube).then(() => { isMirrorColors = isMirrorCube; setAllCubeFaces(); });
+}
+function toggleGold() {
+    isGold = !isGold;
+    if (isGold) {
+        mirrorMaterials = [goldMaterial, goldMaterial, goldMaterial, goldMaterial, goldMaterial, goldMaterial];
+    }
+    else {
+        mirrorMaterials = [silverMaterial, silverMaterial, silverMaterial, silverMaterial, silverMaterial, silverMaterial];
+    }
+    setAllCubeFaces();
+}
 function setupGui() {
     const gui = new dat_gui_1.GUI({ closed: false, width: 100, autoPlace: false });
     gui.close();
@@ -1380,6 +1540,7 @@ function setupGui() {
     shapeFolder.add({ fun: () => morphCombined(1) }, 'fun').name('2x2 [F3]');
     shapeFolder.add({ fun: () => morphCombined(3) }, 'fun').name('Pyramorphix [F4]');
     shapeFolder.add({ fun: () => morphCombined(2) }, 'fun').name('Poke-like [F5]');
+    shapeFolder.add({ fun: () => toggleMirrorCube() }, 'fun').name('Mirror [F8]');
     const looksFolder = gui.addFolder('View');
     looksFolder.add({ fun: () => toggleViewRight() }, 'fun').name('Left/Right [1]');
     looksFolder.add({ fun: () => toggleViewBack() }, 'fun').name('Backside [2]');
@@ -1389,6 +1550,7 @@ function setupGui() {
     looksFolder.add({ fun: () => toggleWireframe() }, 'fun').name('Wireframe [w]');
     looksFolder.add({ fun: () => setAllPyraColors() }, 'fun').name('Pyra-Colors [F6]');
     looksFolder.add({ fun: () => setAllCubeColors() }, 'fun').name('Cube-Colors [F7]');
+    looksFolder.add({ fun: () => toggleGold() }, 'fun').name('Gold mirror [g]');
     const rotFolder = gui.addFolder('Rotations');
     rotFolder.add({ fun: () => undoOperation() }, 'fun').name('Undo [^z,9]');
     rotFolder.add({ fun: () => shuffleOperation() }, 'fun').name('Shuffle [F9]');
@@ -1438,6 +1600,9 @@ function onKeyDown(event) {
             isPyraColors = false;
             setAllCubeFaces();
             break;
+        case "F8":
+            toggleMirrorCube();
+            break;
         case "F9":
             shuffleOperation();
             break;
@@ -1479,6 +1644,11 @@ function onKeyDown(event) {
             break;
         case "a":
             toggleAxes();
+            break;
+        case "g":
+        case "G":
+            toggleGold();
+            setAllCubeFaces();
             break;
         case "n":
         case "N":
@@ -1541,7 +1711,7 @@ function onKeyDown(event) {
                 let numOptions = Object.keys(ColorMask).length;
                 testIndex = Math.min(testIndex + 1, numOptions - 1);
                 colorMaskOption = testIndex;
-                console.log("colorMaskOption: " + colorMaskOption);
+                // console.log("colorMaskOption: " + colorMaskOption);
                 setAllCubeColors();
             }
             break;
@@ -1552,7 +1722,7 @@ function onKeyDown(event) {
                 let numOptions = Object.keys(ColorMask).length;
                 testIndex = Math.max(testIndex - 1, 0);
                 colorMaskOption = testIndex;
-                console.log("colorMaskOption: " + colorMaskOption);
+                // console.log("colorMaskOption: " + colorMaskOption);
                 setAllCubeColors();
             }
             break;
