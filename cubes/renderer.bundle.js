@@ -126080,7 +126080,7 @@ function init() {
     scene.add(baseGroup);
     const loader = new RGBELoader_1.RGBELoader();
     // loader.load('textures/autumn_field_puresky_1k.hdr', function (texture) {
-    loader.load('textures/rosendal_plains_2_1k.hdr', function (texture) {
+    loader.load('../textures/rosendal_plains_2_1k.hdr', function (texture) {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
         // scene.background = texture; // Optional: Set the background to the environment map
