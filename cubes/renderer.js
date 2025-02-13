@@ -271,7 +271,14 @@ function createDirLight(x, y, z) {
 }
 function createMain(shape = null) {
     createAllCubes();
-    if (shape === "pyramorphix") {
+    if (shape === "mirrorcube") {
+        toggleMirrorCube();
+    }
+    else if (shape === "mirror-gold") {
+        toggleMirrorCube();
+        toggleGold();
+    }
+    else if (shape === "pyramorphix") {
         scaleTo2x2(true, 0)
             .then(() => morphToPyra(true, 0))
             .then(() => setAllPyraColors());
@@ -1367,7 +1374,11 @@ function morphCombined(newState) {
         { from: 0, to: 3, ops: [() => scaleTo2x2(true), () => morphToPyra(true), () => wrapInPromise(() => setAllPyraColors())] }, // 0-1, 1-2
         { from: 3, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setAllCubeColors()), () => scaleTo2x2(false)] }, // 2-1, 1-0
         { from: 0, to: 2, ops: [() => morphToPyra(true), () => wrapInPromise(() => setAllPyraColors())] },
-        { from: 2, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setAllCubeColors())] }
+        { from: 2, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setAllCubeColors())] },
+        { from: 0, to: 8, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
+        { from: 8, to: 0, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
+        { from: 1, to: 8, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
+        { from: 8, to: 1, ops: [() => wrapInPromise(() => toggleMirrorCube())] }
     ];
     return new Promise((resolve) => {
         const ops = [];
