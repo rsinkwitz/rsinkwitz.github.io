@@ -272,7 +272,7 @@ function createDirLight(x, y, z) {
 function createMain(shape = null) {
     createAllCubes();
     if (shape === "mirrorcube") {
-        toggleMirrorCube();
+        toggleMirrorCube(0);
     }
     else if (shape === "mirror-gold") {
         toggleMirrorCube();
@@ -1528,8 +1528,8 @@ function toggleNormals() {
     }
     isNormals = !isNormals;
 }
-function toggleMirrorCube() {
-    scaleToMirrorCube(!isMirrorCube).then(() => { isMirrorColors = isMirrorCube; setAllCubeFaces(); });
+function toggleMirrorCube(duration = 0.5) {
+    scaleToMirrorCube(!isMirrorCube, duration).then(() => { isMirrorColors = isMirrorCube; setAllCubeFaces(); });
 }
 function toggleGold() {
     isGold = !isGold;
