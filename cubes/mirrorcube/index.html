@@ -39,6 +39,7 @@
       display: inline-block;
       cursor: pointer;
       font-weight: bold;
+      user-select: none; /* Disable text selection */
     }
     #gui { position: absolute; top: 8px; right: 8px; z-index: 990; }
   </style></head>
@@ -54,7 +55,7 @@
         <a onclick="cube.shuffle(10);" title="Shuffle F9">Shuffle</a>
         <a onclick="cube.morph(0);" title="Shuffle F2">3x3</a>
         <a onclick="cube.morph(1);" title="Shuffle F3">2x2</a>
-        <a onclick="cube.morph(3);" title="Shuffle F4">Pyramorphix</a>
+        <a onclick="cube.morph(3);" title="Shuffle F4">Pyra</a>
         <a onclick="cube.morph(8);" title="Mirror Cube F8">Mirror</a>
       </div>  
     </div>

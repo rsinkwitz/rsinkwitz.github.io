@@ -39,13 +39,14 @@
       display: inline-block;
       cursor: pointer;
       font-weight: bold;
+      user-select: none; /* Disable text selection */
     }
     #gui { position: absolute; top: 8px; right: 8px; z-index: 990; }
   </style></head>
 <body>
 
   <h1>Pocket Cube Simulator</h1>
-	<div id="sim3x3" class="showOnlyThisOnFullScreen">
+    <div id="sim3x3" class="showOnlyThisOnFullScreen">
     <!-- <div id="cube" data-shape="pyramorphix" data-bg-color="#b0c4de" ></div> -->
     <div id="container" data-shape="2x2" data-bg-color="#b0c4de" >
       <div id="cubeControls">
@@ -54,12 +55,12 @@
         <a onclick="cube.shuffle(10);" title="Shuffle F9">Shuffle</a>
         <a onclick="cube.morph(0);" title="Shuffle F2">3x3</a>
         <a onclick="cube.morph(1);" title="Shuffle F3">2x2</a>
-        <a onclick="cube.morph(3);" title="Shuffle F4">Pyramorphix</a>
+        <a onclick="cube.morph(3);" title="Shuffle F4">Pyra</a>
         <a onclick="cube.morph(8);" title="Mirror Cube F8">Mirror</a>
       </div>  
     </div>
     <script type="module" src="../renderer.bundle.js"></script>
-	</div>
+    </div>
   <p><strong>Play with the 3D Rubik's Pocket Cube simulator online. Press the shuffle button and try to figure out the solution and practice.</strong></p>
   <p>Use your keyboard: The letters turn each face, according to <a href="https://ruwix.com/the-rubiks-cube/notation/">notation</a>.
     Use <a onclick="cube.help();" style="color: blue; text-decoration: underline;">F1</a> to show them.</p>
