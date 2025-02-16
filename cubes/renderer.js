@@ -85,7 +85,7 @@ function init() {
         // scene.background = texture; // Optional: Set the background to the environment map
         // Update the silver material to use the environment map
         silverMaterial = new THREE.MeshStandardMaterial({
-            color: 0xd0d0d0,
+            color: 0xc0c0c0,
             roughness: 0.05, // Lower roughness for a shinier surface
             metalness: 1.0, // High metalness for a metallic look
             envMap: texture, // Apply the environment map
@@ -1373,11 +1373,7 @@ function morphCombined(newState) {
         { from: 0, to: 3, ops: [() => scaleTo2x2(true), () => morphToPyra(true), () => wrapInPromise(() => setPyraColors())] }, // 0-1, 1-2
         { from: 3, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setDefaultColors()), () => scaleTo2x2(false)] }, // 2-1, 1-0
         { from: 0, to: 2, ops: [() => morphToPyra(true), () => wrapInPromise(() => setPyraColors())] },
-        { from: 2, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setDefaultColors())] },
-        { from: 0, to: 8, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
-        { from: 8, to: 0, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
-        { from: 1, to: 8, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
-        { from: 8, to: 1, ops: [() => wrapInPromise(() => toggleMirrorCube())] }
+        { from: 2, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setDefaultColors())] }
     ];
     return new Promise((resolve) => {
         const ops = [];
@@ -1844,6 +1840,7 @@ const cubeObject = {
     redo: () => { redoOperation(); },
     shuffle: (n) => { shuffleOperation(n); },
     morph: (n) => { morphCombined(n); },
+    mirror: () => { toggleMirrorCube(); },
     help: () => { toggleRotationInfos(); },
 };
 // Expose the cube object to the global scope
