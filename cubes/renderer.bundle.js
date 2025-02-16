@@ -126086,7 +126086,7 @@ function init() {
         // scene.background = texture; // Optional: Set the background to the environment map
         // Update the silver material to use the environment map
         silverMaterial = new THREE.MeshStandardMaterial({
-            color: 0xc0c0c0,
+            color: 0xd0d0d0,
             roughness: 0.05, // Lower roughness for a shinier surface
             metalness: 1.0, // High metalness for a metallic look
             envMap: texture, // Apply the environment map
@@ -126282,7 +126282,7 @@ function createMain(shape = null) {
     else if (shape === "pyramorphix") {
         scaleTo2x2(true, 0)
             .then(() => morphToPyra(true, 0))
-            .then(() => setAllPyraColors());
+            .then(() => setPyraColors());
     }
     else if (shape === "2x2") {
         scaleTo2x2(true, 0);
@@ -126362,12 +126362,12 @@ function toggleRotationInfos() {
 }
 function toggleWireframe() {
     isWireframe = !isWireframe;
-    setAllCubeFaces();
+    applyCubeFaces();
 }
 function toggleNumbers() {
     isWireframe = false;
     isShowNumbers = !isShowNumbers;
-    setAllCubeFaces();
+    applyCubeFaces();
 }
 const selectionToRotation = [
     // left side, up direction
@@ -126691,7 +126691,7 @@ function createAllCubes() {
             }
         }
     }
-    setAllCubeFaces();
+    applyCubeFaces();
 }
 function addNormals() {
     fixedPieces.forEach((piece) => {
@@ -126717,31 +126717,31 @@ function removeNormals() {
         });
     });
 }
-function setAllCubeFaces() {
+function applyCubeFaces() {
     if (isWireframe) {
-        setAllCubesWireframe();
+        applyCubesWireframe();
     }
     else if (isShowNumbers) {
-        setAllCubesNumbered();
+        applyCubesNumbered();
     }
-    else if (isPyraColors) {
-        setAllPyraColors();
+    else if (isPyraColors && !isMirrorColors) {
+        applyPyraColors();
     }
     else {
-        setAllCubeColors();
+        applyDefaultColors();
     }
 }
-function setAllCubesWireframe() {
+function applyCubesWireframe() {
     fixedPieces.forEach((piece) => {
         getBox(piece).material = wireframeMaterial;
     });
 }
-function setAllCubeColors() {
+function setDefaultColors() {
     isPyraColors = false;
-    if (isWireframe || isShowNumbers) {
-        return;
-    }
-    isShowNumbers = false;
+    applyDefaultColors();
+}
+// Apply the colors to the cube faces according to the maskEnabled settings incl. mirror colors
+function applyDefaultColors() {
     const maskEnabled = getMaskEnabled();
     rotPieces.forEach((piece, index) => {
         const enabled999 = maskEnabled[999];
@@ -126784,12 +126784,11 @@ function setCubeFaceColor(materials, index, i1, i2, enabled) {
         materials[i2 * 2 + 1] = sourceMaterials[i2];
     }
 }
-function setAllPyraColors() {
+function setPyraColors() {
     isPyraColors = true;
-    if (isWireframe || isShowNumbers) {
-        return;
-    }
-    isShowNumbers = false;
+    applyCubeFaces();
+}
+function applyPyraColors() {
     const initialMaterials = [];
     for (let i = 0; i < 12; i++) {
         initialMaterials.push(blackMaterial);
@@ -126813,7 +126812,7 @@ function setAllPyraColors() {
         });
     });
 }
-function setAllCubesNumbered() {
+function applyCubesNumbered() {
     rotPieces.forEach((piece, index) => {
         // Create a canvas and draw the index number on it
         const canvas = document.createElement('canvas');
@@ -126999,7 +126998,7 @@ function rotate(key, addToHistory = true) {
     const piecesToRotate = rotateModel(key, forward, nums);
     rotateGraphics(piecesToRotate, axis, (key === key.toLowerCase()) ? degrees : -degrees);
     if (isShowNumbers) {
-        setAllCubesNumbered();
+        applyCubesNumbered();
     }
 }
 function rotateGraphics(pieces, axis, degrees) {
@@ -127368,14 +127367,14 @@ function morphCombined(newState) {
     const paths = [
         { from: 0, to: 1, ops: [() => scaleTo2x2(true)] },
         { from: 1, to: 0, ops: [() => scaleTo2x2(false)] },
-        { from: 1, to: 3, ops: [() => morphToPyra(true), () => wrapInPromise(() => setAllPyraColors())] },
-        { from: 3, to: 1, ops: [() => morphToPyra(false), () => wrapInPromise(() => setAllCubeColors())] },
+        { from: 1, to: 3, ops: [() => morphToPyra(true), () => wrapInPromise(() => setPyraColors())] },
+        { from: 3, to: 1, ops: [() => morphToPyra(false), () => wrapInPromise(() => setDefaultColors())] },
         { from: 3, to: 2, ops: [() => scaleTo2x2(false)] },
         { from: 2, to: 3, ops: [() => scaleTo2x2(true)] },
-        { from: 0, to: 3, ops: [() => scaleTo2x2(true), () => morphToPyra(true), () => wrapInPromise(() => setAllPyraColors())] }, // 0-1, 1-2
-        { from: 3, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setAllCubeColors()), () => scaleTo2x2(false)] }, // 2-1, 1-0
-        { from: 0, to: 2, ops: [() => morphToPyra(true), () => wrapInPromise(() => setAllPyraColors())] },
-        { from: 2, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setAllCubeColors())] },
+        { from: 0, to: 3, ops: [() => scaleTo2x2(true), () => morphToPyra(true), () => wrapInPromise(() => setPyraColors())] }, // 0-1, 1-2
+        { from: 3, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setDefaultColors()), () => scaleTo2x2(false)] }, // 2-1, 1-0
+        { from: 0, to: 2, ops: [() => morphToPyra(true), () => wrapInPromise(() => setPyraColors())] },
+        { from: 2, to: 0, ops: [() => morphToPyra(false), () => wrapInPromise(() => setDefaultColors())] },
         { from: 0, to: 8, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
         { from: 8, to: 0, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
         { from: 1, to: 8, ops: [() => wrapInPromise(() => toggleMirrorCube())] },
@@ -127530,7 +127529,7 @@ function toggleNormals() {
     isNormals = !isNormals;
 }
 function toggleMirrorCube(duration = 0.5) {
-    scaleToMirrorCube(!isMirrorCube, duration).then(() => { isMirrorColors = isMirrorCube; setAllCubeFaces(); });
+    scaleToMirrorCube(!isMirrorCube, duration).then(() => { isMirrorColors = isMirrorCube; applyCubeFaces(); });
 }
 function toggleGold() {
     isGold = !isGold;
@@ -127540,7 +127539,7 @@ function toggleGold() {
     else {
         mirrorMaterials = [silverMaterial, silverMaterial, silverMaterial, silverMaterial, silverMaterial, silverMaterial];
     }
-    setAllCubeFaces();
+    applyCubeFaces();
 }
 function setupGui() {
     const gui = new dat_gui_1.GUI({ closed: false, width: 100, autoPlace: false });
@@ -127560,8 +127559,8 @@ function setupGui() {
     looksFolder.add({ fun: () => resetView() }, 'fun').name('Reset [0]');
     looksFolder.add({ fun: () => toggleTumble() }, 'fun').name('Tumble [t]');
     looksFolder.add({ fun: () => toggleWireframe() }, 'fun').name('Wireframe [w]');
-    looksFolder.add({ fun: () => setAllPyraColors() }, 'fun').name('Pyra-Colors [F6]');
-    looksFolder.add({ fun: () => setAllCubeColors() }, 'fun').name('Cube-Colors [F7]');
+    looksFolder.add({ fun: () => setPyraColors() }, 'fun').name('Pyra-Colors [F6]');
+    looksFolder.add({ fun: () => setDefaultColors() }, 'fun').name('Cube-Colors [F7]');
     looksFolder.add({ fun: () => toggleGold() }, 'fun').name('Gold mirror [g]');
     const rotFolder = gui.addFolder('Rotations');
     rotFolder.add({ fun: () => undoOperation() }, 'fun').name('Undo [^z,9]');
@@ -127606,11 +127605,11 @@ function onKeyDown(event) {
             break;
         case "F6":
             isPyraColors = true;
-            setAllCubeFaces();
+            applyCubeFaces();
             break;
         case "F7":
             isPyraColors = false;
-            setAllCubeFaces();
+            applyCubeFaces();
             break;
         case "F8":
             toggleMirrorCube();
@@ -127660,7 +127659,7 @@ function onKeyDown(event) {
         case "g":
         case "G":
             toggleGold();
-            setAllCubeFaces();
+            applyCubeFaces();
             break;
         case "n":
         case "N":
@@ -127724,7 +127723,7 @@ function onKeyDown(event) {
                 testIndex = Math.min(testIndex + 1, numOptions - 1);
                 colorMaskOption = testIndex;
                 // console.log("colorMaskOption: " + colorMaskOption);
-                setAllCubeColors();
+                setDefaultColors();
             }
             break;
         case "ArrowDown":
@@ -127735,7 +127734,7 @@ function onKeyDown(event) {
                 testIndex = Math.max(testIndex - 1, 0);
                 colorMaskOption = testIndex;
                 // console.log("colorMaskOption: " + colorMaskOption);
-                setAllCubeColors();
+                setDefaultColors();
             }
             break;
         case "ArrowLeft":
